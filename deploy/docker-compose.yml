@@ -1,0 +1,144 @@
+# 配置文件版本 
+version: "3"
+
+# 管理的服务
+services:
+    zoo1:
+        image: wurstmeister/zookeeper
+        container_name: zoo1
+        hostname: zoo1
+        ports:
+            - ${REAL_ZOO1_PORT}:2181
+        volumes:
+            - ${REAL_ZOO1_DATA}:/data
+            - ${REAL_ZOO1_LOG}:/datalog 
+        environment:
+            TZ: Asia/Shanghai
+            ZOO_MY_ID: 1
+            ZOO_PORT: 2181
+            ZOO_SERVERS: server.1=zoo1:2888:3888 server.2=zoo2:2888:3888
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "200m"
+                max-file: "3"
+        restart: always
+        networks:
+            zoo_kafka:
+                ipv4_address: 172.23.0.11
+
+    zoo2:
+        image: wurstmeister/zookeeper
+        container_name: zoo2
+        hostname: zoo2
+        ports:
+            - ${REAL_ZOO2_PORT}:2181
+        volumes:
+            - ${REAL_ZOO2_DATA}:/data
+            - ${REAL_ZOO2_LOG}:/datalog 
+        environment:
+            TZ: Asia/Shanghai
+            ZOO_MY_ID: 2
+            ZOO_PORT: 2181
+            ZOO_SERVERS: server.1=zoo1:2888:3888 server.2=zoo2:2888:3888
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "200m"
+                max-file: "3"
+        restart: always
+        networks:
+            zoo_kafka:
+                ipv4_address: 172.23.0.12
+
+    kafka1:
+        image: wurstmeister/kafka
+        container_name: kafka1
+        hostname: kafka1
+        ports:
+            - ${REAL_KAFKA1_PORT}:9092
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+            - ${REAL_KAFKA1_DATA}:/kafka
+            - ${REAL_KAFKA1_LOG}:/opt/kafka/logs
+        environment:
+            TZ: Asia/Shanghai
+            KAFKA_BROKER_ID: 1
+            KAFKA_LISTENERS: PLAINTEXT://kafka1:9092
+            KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka1:9092
+            KAFKA_ADVERTISED_HOST_NAME: kafka1
+            KAFKA_ADVERTISED_PORT: 9092
+            KAFKA_ZOOKEEPER_CONNECT: zoo1:2181/kafka1,zoo2:2181/kafka1
+            JMX_PORT: 9988
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "200m"
+                max-file: "3"
+        depends_on:
+            - zoo1
+            - zoo2
+        restart: always
+        networks:
+            zoo_kafka:
+                ipv4_address: 172.23.0.21
+
+    kafka2:
+        image: wurstmeister/kafka
+        container_name: kafka2
+        hostname: kafka2
+        ports:
+            - ${REAL_KAFKA2_PORT}:9092
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+            - ${REAL_KAFKA2_DATA}:/kafka
+            - ${REAL_KAFKA2_LOG}:/opt/kafka/logs
+        environment:
+            TZ: Asia/Shanghai
+            KAFKA_BROKER_ID: 2
+            KAFKA_LISTENERS: PLAINTEXT://kafka2:9092
+            KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka2:9092
+            KAFKA_ADVERTISED_HOST_NAME: kafka2
+            KAFKA_ADVERTISED_PORT: 9092
+            KAFKA_ZOOKEEPER_CONNECT: zoo1:2181/kafka1,zoo2:2181/kafka1
+            JMX_PORT: 9988
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "200m"
+                max-file: "3"
+        depends_on:
+            - zoo1
+            - zoo2
+        restart: always
+        networks:
+            zoo_kafka:
+                ipv4_address: 172.23.0.22
+
+    kafka-manager:
+        image: sheepkiller/kafka-manager
+        container_name: kafka-manager
+        hostname: kafka-manager
+        ports:
+            - ${REAL_MANAGER_PORT}:9000
+        depends_on:
+            - kafka1
+            - kafka2
+        environment:
+            ZK_HOSTS: zoo1:2181/kafka1,zoo2:2181/kafka1
+            KAFKA_BROKERS: kafka1:9092,kafka2:9092
+            APPLICATION_SECRET: letmein
+            KM_ARGS: -Djava.net.preferIPv4Stack=true
+        restart: always
+        networks:
+            zoo_kafka:
+                ipv4_address: 172.23.0.31
+
+
+networks:
+    zoo_kafka:
+        ipam:
+            driver: default
+            config:
+                - subnet: 172.23.0.0/24
+
