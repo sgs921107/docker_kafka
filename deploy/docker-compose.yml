@@ -64,8 +64,8 @@ services:
         environment:
             TZ: Asia/Shanghai
             KAFKA_BROKER_ID: 1
-            KAFKA_LISTENERS: PLAINTEXT://kafka1:9092
-            KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka1:9092
+            KAFKA_LISTENERS: PLAINTEXT://${KAFKA1_IP:-172.23.0.21}:9092
+            KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://${KAFKA1_IP:-172.23.0.21}:9092
             KAFKA_ADVERTISED_HOST_NAME: kafka1
             KAFKA_ADVERTISED_PORT: 9092
             KAFKA_ZOOKEEPER_CONNECT: zoo1:2181/kafka1,zoo2:2181/kafka1
@@ -81,7 +81,7 @@ services:
         restart: always
         networks:
             zoo_kafka:
-                ipv4_address: 172.23.0.21
+                ipv4_address: ${KAFKA1_IP:-172.23.0.21}
 
     kafka2:
         image: wurstmeister/kafka
@@ -96,8 +96,8 @@ services:
         environment:
             TZ: Asia/Shanghai
             KAFKA_BROKER_ID: 2
-            KAFKA_LISTENERS: PLAINTEXT://kafka2:9092
-            KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka2:9092
+            KAFKA_LISTENERS: PLAINTEXT://${KAFKA2_IP:-172.23.0.22}:9092
+            KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://${KAFKA2_IP:-172.23.0.22}:9092
             KAFKA_ADVERTISED_HOST_NAME: kafka2
             KAFKA_ADVERTISED_PORT: 9092
             KAFKA_ZOOKEEPER_CONNECT: zoo1:2181/kafka1,zoo2:2181/kafka1
@@ -113,7 +113,7 @@ services:
         restart: always
         networks:
             zoo_kafka:
-                ipv4_address: 172.23.0.22
+                ipv4_address: ${KAFKA2_IP:-172.23.0.22}
 
     kafka-manager:
         image: sheepkiller/kafka-manager
